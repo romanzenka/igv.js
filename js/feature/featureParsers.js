@@ -94,6 +94,9 @@ var igv = (function (igv) {
                 this.decode = decodeRefflat;
                 this.delimiter = "\t";
                 break;
+            case 'bed':
+                this.decode = decodeBed;
+                this.delimiter = config.delimiter || /\s+/;
             default:
 
                 customFormat = igv.browser.getFormat(format);
