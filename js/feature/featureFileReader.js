@@ -287,7 +287,7 @@ var igv = (function (igv) {
             return Promise.resolve(self.index);
         }
 
-        if (self.indexURL || self.indexed) {
+        if (isIndexed()) {
 
             return self.loadIndex()
                 .then(function (indexOrUndefined) {
@@ -311,7 +311,22 @@ var igv = (function (igv) {
             self.indexed = false;
             return Promise.resolve(undefined);
         }
+
+        function isIndexed() {
+            if(self.config.indexURL || self.config.indexed) {
+                return true;
+            }
+            else {
+                // Assusme vcf.gz files are tabix indexed (they almost always are).
+                var idx = self.config.url.indexOf("?"),
+                    path = idx > 0 ? self.config.url.substring(0, idx) : self.config.url;
+                return path.endsWith(".vcf.gz");
+
+            }
+        }
     };
+
+
 
     igv.FeatureFileReader.prototype.loadFeaturesFromDataURI = function () {
         var bytes, inflate, plain, features,
