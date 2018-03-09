@@ -252,6 +252,7 @@ $drag-drop-warning-color: red;
   top:0;
   width:100%;
   height:100%;
+  image-rendering: pixelated;
 }
 
 // ideogram
@@ -275,6 +276,7 @@ $drag-drop-warning-color: red;
   canvas {
     width:100%;
     height:100%;
+    image-rendering: pixelated;
   }
 
 }
@@ -407,6 +409,7 @@ $drag-drop-warning-color: red;
   canvas {
     width: 100%;
     height: 100%;
+    image-rendering: pixelated;
   }
 
 }
@@ -539,6 +542,7 @@ $drag-drop-warning-color: red;
 
   canvas {
     position: absolute;
+    image-rendering: pixelated;
   }
 
 }
