@@ -63,10 +63,13 @@ var igv = (function (igv) {
             panel.$canvas = $('<canvas>');
             panel.$ideogram.append(panel.$canvas);
 
-            panel.$canvas.attr('width', panel.$ideogram.width());
-            panel.$canvas.attr('height', panel.$ideogram.height());
+            panel.dppx = igv.graphics.dppx();
+
+            panel.$canvas.attr('width', panel.$ideogram.width() * panel.dppx);
+            panel.$canvas.attr('height', panel.$ideogram.height() * panel.dppx);
 
             panel.ctx = panel.$canvas.get(0).getContext("2d");
+            panel.ctx.scale(panel.dppx, panel.dppx);
 
             panel.ideograms = {};
 
@@ -156,7 +159,7 @@ var igv = (function (igv) {
             canvasWidth = panel.$canvas.width();
             canvasHeight = panel.$canvas.height();
             panel.ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-            
+
             if(referenceFrame.chrName.toLowerCase() === "all") {
                 return;
             }
@@ -166,11 +169,13 @@ var igv = (function (igv) {
             if (undefined === image) {
 
                 image = document.createElement('canvas');
-                image.width = canvasWidth;
-                image.height = canvasHeight;
+                image.width = canvasWidth * panel.dppx;
+                image.height = canvasHeight * panel.dppx;
                 // image.height = 13;
 
-                drawIdeogram(image.getContext('2d'), image.width, image.height);
+                var context = image.getContext('2d');
+                context.scale(panel.dppx, panel.dppx);
+                drawIdeogram(context, canvasWidth, canvasHeight);
 
                 panel.ideograms[ referenceFrame.chrName ] = image;
             }
@@ -178,7 +183,9 @@ var igv = (function (igv) {
             // y = (canvasHeight - image.height) / 2.0;
             // panel.ctx.drawImage(image, 0, y);
             y = 0;
-            panel.ctx.drawImage(image, 0, 0);
+            panel.ctx.drawImage(image,
+              0, 0, image.width, image.height,
+              0, 0, canvasWidth, canvasHeight);
 
             // panel.ctx.save();
 
@@ -209,7 +216,7 @@ var igv = (function (igv) {
                 ww = (width < 2) ? 1 : width - panel.ctx.lineWidth;
 
                 yy = y + (panel.ctx.lineWidth)/2;
-                hh = image.height - panel.ctx.lineWidth;
+                hh = canvasHeight - panel.ctx.lineWidth;
 
                 panel.ctx.strokeRect(xx, yy, ww, hh);
 

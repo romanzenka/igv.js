@@ -243,7 +243,20 @@ var igv = (function (igv) {
             ctx.restore();
         },
 
+        dppx: function() {
+            // On retina displays, we create canvas that is dppx times larger than
+            // its reported size in pixels. We will style the canvas to still take
+            // the prescribed amount of pixels though. This will lead to full utilization
+            // of the available resolution
 
+            // This is taken from the 'res' npm module, modified to return 1 when feature not available
+            function ie() {
+                return Math.sqrt(screen.deviceXDPI * screen.deviceYDPI) / 96;
+            }
+
+            // devicePixelRatio: Webkit (Chrome/Android/Safari), Opera (Presto 2.8+), FF 18+
+            return typeof window == 'undefined' ? 1 : +window.devicePixelRatio || ie() || 1;
+        },
     }
 
     function doPath(ctx, x, y) {
