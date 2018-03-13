@@ -3,6 +3,8 @@
  */
 var igv = (function (igv) {
 
+    var devicePixelRatio = window.devicePixelRatio;
+
     igv.Viewport = function (trackView, $container, genomicState, $previousViewportOrUndefined) {
 
         var self = this,
@@ -45,9 +47,7 @@ var igv = (function (igv) {
 
         $(this.contentDiv).append(this.canvas);
 
-        this.canvas.setAttribute('width', this.contentDiv.clientWidth);
-        this.canvas.setAttribute('height', this.contentDiv.clientHeight);
-        this.ctx = this.canvas.getContext("2d");
+        setupCanvasSize(this);
 
         if (trackView.track instanceof igv.RulerTrack) {
             trackView.track.appendLocusLabel($(this.contentDiv), this.genomicState);
@@ -164,8 +164,7 @@ var igv = (function (igv) {
 
         if (contentWidth > 0) {
             this.setWidth(contentWidth, true);
-            this.canvas.style.width = this.$viewport.width() + "px";
-            this.canvas.setAttribute('width', this.$viewport.width());
+            setupCanvasSize(this);
             this.update();
         }
     };
@@ -197,7 +196,7 @@ var igv = (function (igv) {
 
         // Expand the requested range so we can pan a bit without reloading.  But not beyond chromosome bounds
         chrLength = igv.browser.genome.getChromosome(chr).bpLength;
-        pixelWidth = 3 * this.canvas.width;
+        pixelWidth = 3 * self.getContentWidth();
         bpWidth = referenceFrame.toBP(pixelWidth);
         bpStart = Math.floor(Math.max(0, referenceFrame.start - bpWidth / 3));
         bpEnd = Math.ceil(Math.min(chrLength, bpStart + bpWidth));
@@ -218,7 +217,7 @@ var igv = (function (igv) {
 
                     // Height of content div and content canvas
                     requiredContentHeight = self.trackView.track.computePixelHeight(features);
-                    currentContentHeight = $(self.contentDiv).height();
+                    currentContentHeight = self.getContentHeight();
 
                     if (requiredContentHeight !== currentContentHeight) {
                         self.setContentHeight(requiredContentHeight);
@@ -251,7 +250,9 @@ var igv = (function (igv) {
             refFrameStart,
             refFrameEnd,
             drawConfiguration,
-            buffer;
+            buffer,
+            canvasWidth = self.getContentWidth(),
+            canvasHeight = self.getContentHeight();
 
         if (!(viewIsReady.call(this))) {
             return;
@@ -259,7 +260,7 @@ var igv = (function (igv) {
 
         // TODO -- show whole genome zoom in notice here
         if (showZoomInNotice.call(this)) {
-            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            this.ctx.clearRect(0, 0, canvasWidth, canvasHeight);
             this.$zoomInNotice.show();
             return;
         } else {
@@ -269,7 +270,7 @@ var igv = (function (igv) {
 
         chr = referenceFrame.chrName;
         refFrameStart = referenceFrame.start;
-        refFrameEnd = refFrameStart + referenceFrame.toBP(this.canvas.width);
+        refFrameEnd = refFrameStart + referenceFrame.toBP(canvasWidth);
 
         // Paint existing cached image, if any, while data loads.
         this.paintImage(chr, refFrameStart, refFrameEnd, referenceFrame.bpPerPixel);
@@ -282,7 +283,7 @@ var igv = (function (igv) {
             // Expand the requested range so we can pan a bit without reloading.  But not beyond chromosome bounds
             var chrLength = igv.browser.genome.getChromosome(chr).bpLength;
 
-            pixelWidth = 3 * this.canvas.width;
+            pixelWidth = 3 * canvasWidth;
             bpWidth = referenceFrame.toBP(pixelWidth);
             bpStart = Math.floor(Math.max(0, referenceFrame.start - bpWidth / 3));
             bpEnd = Math.ceil(Math.min(chrLength, bpStart + bpWidth));
@@ -310,14 +311,16 @@ var igv = (function (igv) {
                     self.stopSpinner();
 
                     buffer = document.createElement('canvas');
-                    buffer.width = pixelWidth;
-                    buffer.height = self.canvas.height;
+                    buffer.width = pixelWidth * devicePixelRatio;
+                    buffer.height = canvasHeight * devicePixelRatio;
+                    var context = buffer.getContext('2d');
+                    context.scale(devicePixelRatio, devicePixelRatio);
                     drawConfiguration =
                     {
                         features: features,
-                        context: buffer.getContext('2d'),
-                        pixelWidth: buffer.width,
-                        pixelHeight: buffer.height,
+                        context: context,
+                        pixelWidth: pixelWidth,
+                        pixelHeight: canvasHeight,
                         bpStart: bpStart,
                         bpEnd: bpEnd,
                         bpPerPixel: referenceFrame.bpPerPixel,
@@ -453,12 +456,14 @@ var igv = (function (igv) {
         }
 
         $(this.contentDiv).height(contentHeight);
-        $(this.canvas).height(contentHeight);
-        this.canvas.setAttribute("height", contentHeight);
+        setupCanvasSize(this);
+    };
+
+    igv.Viewport.prototype.getContentWidth = function () {
+        return $(this.contentDiv).width();
     };
 
     igv.Viewport.prototype.getContentHeight = function () {
-
         return $(this.contentDiv).height();
     };
 
@@ -764,6 +769,18 @@ var igv = (function (igv) {
 
         return result;
     };
+
+    function setupCanvasSize(viewport) {
+        var canvas = viewport.canvas;
+        var w = +viewport.contentDiv.clientWidth;
+        var h = +viewport.contentDiv.clientHeight;
+        canvas.style.width = w + 'px';
+        canvas.style.height = h + 'px';
+        canvas.width = devicePixelRatio * w;
+        canvas.height = devicePixelRatio * h;
+        viewport.ctx = canvas.getContext("2d");
+        viewport.ctx.scale(devicePixelRatio, devicePixelRatio);
+    }
 
     var Tile = function (chr, tileStart, tileEnd, bpPerPixel, image) {
         this.chr = chr;
