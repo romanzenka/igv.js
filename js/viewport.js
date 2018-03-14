@@ -470,13 +470,20 @@ var igv = (function (igv) {
     igv.Viewport.prototype.paintImage = function (chr, start, end, bpPerPixel) {
 
         var offset, sx, dx, scale, sWidth, dWidth, iHeight,
+          canvasWidth = this.getContentWidth(),
+          canvasHeight = this.getContentHeight(),
             tile = this.tile;
 
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
         if (tile && tile.containsRange(chr, start, end, bpPerPixel)) {
             this.xOffset = Math.round((tile.startBP - start) / tile.bpPerPixel);
-            this.ctx.drawImage(tile.image, this.xOffset, 0);
+            this.ctx.drawImage(
+              tile.image,
+              0, 0, tile.image.width, tile.image.height, // source
+              this.xOffset, 0,
+              tile.image.width / devicePixelRatio,
+              tile.image.height / devicePixelRatio); // destination
             this.ctx.save();
             this.ctx.restore();
         } else if (tile && tile.overlapsRange(chr, start, end)) {
@@ -490,18 +497,19 @@ var igv = (function (igv) {
                 dx = -offset;
             }
 
-            dWidth = tile.image.width;
+            dWidth = canvasWidth;
             if (bpPerPixel === tile.bpPerPixel) {
-                sWidth = dWidth;
+                sWidth = dWidth * devicePixelRatio;
             } else {
                 scale = bpPerPixel / tile.bpPerPixel;
-                sWidth = Math.round(scale * dWidth);
-
+                sWidth = Math.round(scale * dWidth) * devicePixelRatio;
             }
 
             iHeight = tile.image.height;
 
-            this.ctx.drawImage(tile.image, sx, 0, sWidth, iHeight, dx, 0, dWidth, iHeight);
+            this.ctx.drawImage(tile.image,
+              sx, 0, sWidth, iHeight,
+              dx, 0, dWidth, canvasHeight);
             this.ctx.save();
             this.ctx.restore();
         }
