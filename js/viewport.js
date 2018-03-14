@@ -164,7 +164,6 @@ var igv = (function (igv) {
 
         if (contentWidth > 0) {
             this.setWidth(contentWidth, true);
-            setupCanvasSize(this);
             this.update();
         }
     };
@@ -233,8 +232,8 @@ var igv = (function (igv) {
         if (this.tile) {
             this.tile.invalidate = true;
         }
+        setupCanvasSize(this);
         this.repaint();
-
     };
 
     igv.Viewport.prototype.repaint = function () {
@@ -787,6 +786,7 @@ var igv = (function (igv) {
         canvas.width = devicePixelRatio * w;
         canvas.height = devicePixelRatio * h;
         viewport.ctx = canvas.getContext("2d");
+        viewport.ctx.setTransform(1, 0, 0, 1, 0, 0);
         viewport.ctx.scale(devicePixelRatio, devicePixelRatio);
     }
 
